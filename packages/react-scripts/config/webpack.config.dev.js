@@ -80,7 +80,7 @@ module.exports = {
     // We placed these paths second because we want `node_modules` to "win"
     // if there are any conflicts. This matches Node resolution mechanism.
     // https://github.com/facebookincubator/create-react-app/issues/253
-    modules: ['node_modules', paths.appNodeModules].concat(
+    modules: ['node_modules', paths.appNodeModules, paths.appSrc].concat(
       // It is guaranteed to exist because we tweak it in `env.js`
       process.env.NODE_PATH.split(path.delimiter).filter(Boolean)
     ),
@@ -169,6 +169,26 @@ module.exports = {
               // @remove-on-eject-begin
               babelrc: false,
               presets: [require.resolve('babel-preset-react-app')],
+              // --- CUSTOM START ---
+              plugins: [
+                [
+                  require.resolve('babel-plugin-transform-imports'),
+                  {
+                    antd: {
+                      preventFullImport: true,
+                      transform: 'antd/lib/${member}',
+                      camelCase: true,
+                    },
+                    lodash: {
+                      preventFullImport: true,
+                      transform: "lodash/${member}",
+                    }
+                  },
+                ],
+                require.resolve('babel-plugin-transform-decorators-legacy'),
+                require.resolve('babel-plugin-transform-class-properties'),
+              ],
+              // --- CUSTOM END ---
               // @remove-on-eject-end
               // This is a feature of `babel-loader` for webpack (not Babel itself).
               // It enables caching results in ./node_modules/.cache/babel-loader/
@@ -189,6 +209,10 @@ module.exports = {
                 loader: require.resolve('css-loader'),
                 options: {
                   importLoaders: 1,
+                  // --- CUSTOM START ---
+                  modules: true,
+                  localIdentName: '[name]__[local]___[hash:base64:5]',
+                  // --- CUSTOM END ---
                 },
               },
               {
@@ -198,6 +222,20 @@ module.exports = {
                   // https://github.com/facebookincubator/create-react-app/issues/2677
                   ident: 'postcss',
                   plugins: () => [
+                    // --- CUSTOM START ---
+                    require('postcss-global-import'),
+                    require('postcss-import')({
+                      path: [
+                        paths.appNodeModules,
+                        paths.appSrc,
+                      ],
+                    }),
+                    require('postcss-mixins'),
+                    require('postcss-url'),
+                    require('postcss-nested'),
+                    require('postcss-advanced-variables'),
+                    require('postcss-sass-color-functions'),
+                    // --- CUSTOM END ---
                     require('postcss-flexbugs-fixes'),
                     autoprefixer({
                       browsers: [
